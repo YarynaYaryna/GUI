@@ -14,6 +14,8 @@ pygame.init()
 clock = pygame.time.Clock()
 FPS = 60
 game_paused = False
+game_menu = True
+left=False
 
 #create game window
 SCREEN_WIDTH = 800
@@ -39,11 +41,11 @@ resume_img = pygame.image.load('buttons/resume_btn.png')
 start_button = b.Button(100, 50, start_img, 0.8)
 exit_button = b.Button(100, 200, exit_img, 0.8)
 pause_button = b.Button(5, 5, pause_img, 0.25)
-resume_button = b.Button(304, 125, resume_img, 1)
+resume_button = b.Button(220, 125, resume_img, 1)
 
 #create animation list
 animation_list = []
-animation_steps = [4, 9, 6, 4]
+animation_steps = [4, 9, 6, 4, 4, 9, 6, 4]
 action = 0
 last_update = pygame.time.get_ticks()
 animation_cooldown = 55
@@ -91,7 +93,7 @@ count = 0
 #game loop
 run = True
 while run:
-    if count == 0:
+    if count == 0 and game_menu:
         #draw world
         screen.fill((160, 255, 255))
         screen.blit(foxy.get_image(0, 170, 242, 1.5, BLACK), (500, 70))
@@ -100,6 +102,7 @@ while run:
             run = False
         if start_button.draw(screen):
             count += 1
+            game_menu = False
     #check if game is paused
     elif game_paused == True:
         screen.fill((160, 255, 255))
@@ -128,9 +131,14 @@ while run:
         #get keypresses
         key = pygame.key.get_pressed()
         if key[pygame.K_LEFT] and scroll > 0:
+            left=True
             scroll -= 5
-            action = 0
+            if action == 4 or action == 5:
+                action = 5
+            elif action == 6 or action == 7:
+                action = 6
         if key[pygame.K_RIGHT] and scroll < 2000:
+            left=False
             scroll += 5
             if action == 0 or action == 1:
                 action = 1
@@ -141,13 +149,27 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        if event.type == pygame.KEYDOWN:
+        if not game_paused and not game_menu and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RIGHT:
+              action=0
+              frame=0
+            if event.key == pygame.K_LEFT:
+              action=4
+              frame=0
             if event.key == pygame.K_DOWN:
+              if not left:
                 action = 3
                 frame = 0
+              if left:
+                action = 7
+                frame = 0
             if event.key == pygame.K_UP:
+              if not left:
                 action = 0
                 frame = 0
+              if left:
+                action=4
+                frame=0
             if event.key == pygame.K_ESCAPE:
                 game_paused = True
 
