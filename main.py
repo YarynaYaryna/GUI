@@ -5,90 +5,86 @@
 
 #import lybraries
 import pygame
-import time
+import Animals as a
+import Button as b
 from player import spritesheet as s
-from buttons import button as b
 
-global count
+
 pygame.init()
 
+#set framerate
 clock = pygame.time.Clock()
 FPS = 60
+
+#define game variables
+GRAVITY = 0.4
+scroll = 0
+
+#define colors
+BLACK=((255,0,0))
+#define player action variables
 game_paused = False
 game_menu = True
-left=False
 menu_state = "main"
+moving_left = False
+moving_right = False
+start_game=False
 
 #create game window
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 432
 
-#define colors
-BLACK = (0, 0, 0)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Fox")
-fox_image = pygame.image.load('player/fox_sprite.png')
-fox = s.SpriteSheet(fox_image)
+
+#load images
 foxy_image = pygame.image.load('foxy.png')
+water_image=pygame.image.load('water.jpg')
+
+
+#create instances
 foxy = s.SpriteSheet(foxy_image)
+water = s.SpriteSheet(water_image)
 
 #load button images
-start_img = pygame.image.load('buttons/start_btn.png')
-exit_img = pygame.image.load('buttons/exit_btn.png')
-pause_img = pygame.image.load('buttons/pause_btn.png')
-#resume_img = pygame.image.load('buttons/resume_btn.png')
-resume_img = pygame.image.load("buttons/button_resume.png")
-options_img = pygame.image.load("buttons/button_options.png")
-quit_img = pygame.image.load("buttons/button_quit.png")
-video_img = pygame.image.load('buttons/button_video.png')
-audio_img = pygame.image.load('buttons/button_audio.png')
-keys_img = pygame.image.load('buttons/button_keys.png')
-back_img = pygame.image.load('buttons/button_back.png')
+start_img = pygame.image.load('Images/Buttons/button_start.png')
+exit_img = pygame.image.load('Images/Buttons/button_exit.png')
+pause_img = pygame.image.load('Images/Buttons/button_pause.png')
+resume_img = pygame.image.load("Images/Buttons/button_resume.png")
+options_img = pygame.image.load("Images/Buttons/button_options.png")
+quit_img = pygame.image.load("Images/Buttons/button_quit.png")
+video_img = pygame.image.load('Images/Buttons/button_video.png')
+audio_img = pygame.image.load('Images/Buttons/button_audio.png')
+keys_img = pygame.image.load('Images/Buttons/button_keys.png')
+back_img = pygame.image.load('Images/Buttons/button_back.png')
 
 #create button instances
 start_button = b.Button(100, 50, start_img, 0.8)
 exit_button = b.Button(100, 200, exit_img, 0.8)
 pause_button = b.Button(5, 5, pause_img, 0.25)
-#resume_button = b.Button(220, 125, resume_img, 1)
 resume_button = b.Button(100, 50, resume_img, 1)
 options_button = b.Button(100, 150, options_img, 1)
 quit_button = b.Button(100, 250, quit_img, 1)
-video_button = b.Button(327, 25, video_img, 1)
-audio_button = b.Button(325, 125, audio_img, 1)
-keys_button = b.Button(367, 225, keys_img, 1)
-back_button = b.Button(540, 325, back_img, 1)
+video_button = b.Button(427, 25, video_img, 1)
+audio_button = b.Button(425, 125, audio_img, 1)
+keys_button = b.Button(467, 225, keys_img, 1)
+back_button = b.Button(640, 325, back_img, 1)
 
-#create animation list
-animation_list = []
-animation_steps = [4, 9, 6, 4, 4, 9, 6, 4]
-action = 0
-last_update = pygame.time.get_ticks()
-animation_cooldown = 55
-frame = 0
-step_counter = 0
 
-for animation in animation_steps:
-    temp_img_list = []
-    for _ in range(animation):
-        temp_img_list.append(fox.get_image(step_counter, 280, 167, 0.8, BLACK))
-        step_counter += 1
-    animation_list.append(temp_img_list)
-
-#define game variables
-scroll = 0
-
-ground_image = pygame.image.load("parallax/ground.png").convert_alpha()
+#load background images
+ground_image = pygame.image.load("Images/Parallax/ground.png")
 ground_width = ground_image.get_width()
 ground_height = ground_image.get_height()
 
 bg_images = []
 for i in range(1, 6):
-    bg_image = pygame.image.load(f"parallax/plx-{i}.png").convert_alpha()
+    bg_image = pygame.image.load(f"Images/Parallax/plx-{i}.png")
     bg_images.append(bg_image)
 bg_width = bg_images[0].get_width()
 
 
+#drawing background      
 def draw_bg():
     for x in range(5):
         speed = 0.5
@@ -96,31 +92,29 @@ def draw_bg():
             screen.blit(i, ((x * bg_width) - scroll * speed, 0))
             speed += 0.2
 
-
+#drawing ground
 def draw_ground():
     for x in range(15):
         screen.blit(
             ground_image,
             ((x * ground_width) - scroll * 2, SCREEN_HEIGHT - ground_height))
 
-
-count = 0
-
+fox = a.Animals('Fox', 200, 200, 0.65, 7)
+      
 #game loop
 run = True
 while run:
-    if count == 0 and game_menu:
+    if start_game==False and game_menu:
         #draw world
         screen.fill((160, 255, 255))
-        screen.blit(foxy.get_image(0, 170, 242, 1.5, BLACK), (500, 70))
-        #foxy.draw(screen)
+        screen.blit(foxy.get_image(0, 170, 270, 1.5, BLACK), (500, 70))
         if exit_button.draw(screen):
             run = False
         if start_button.draw(screen):
-            count += 1
             game_menu = False
+            start_game=True
     #check if game is paused
-    elif game_paused == True:
+    elif game_paused:
         screen.fill((160, 255, 255))
         #if resume_button.draw(screen):
             #game_paused = False
@@ -144,8 +138,9 @@ while run:
             print("Change Key Bindings")
           if back_button.draw(screen):
             menu_state = "main"
-    else:
+    elif start_game:
         clock.tick(FPS)
+        
         #draw world
         draw_bg()
         draw_ground()
@@ -153,69 +148,65 @@ while run:
         if pause_button.draw(screen):
             game_paused = True
 
-        #update animation
-        current_time = pygame.time.get_ticks()
-        if current_time - last_update >= animation_cooldown:
-            frame += 1
-            last_update = current_time
-            if frame >= len(animation_list[action]):
-                frame = 0
+        fox.update_animation()
+        fox.draw(screen)
+        fox.move(moving_left, moving_right, SCREEN_HEIGHT)
 
-        #show frame image
-        screen.blit(animation_list[action][frame], (0, 270))
+      
+        #update player actions
+        if fox.alive:
+          if fox.in_air:
+            fox.update_action(2)#2: jump
+          elif fox.crouch:
+            if moving_left or moving_right:
+              fox.update_action(3)#3: crouch
+            else:
+              fox.update_action(4)#4: crouch idle
+          elif not fox.crouch:
+            if moving_left or moving_right:
+              fox.update_action(1)#1: run
+            else:
+              fox.update_action(0)#0: idle
+          fox.move(moving_left, moving_right, SCREEN_HEIGHT)
 
         #get keypresses
         key = pygame.key.get_pressed()
         if key[pygame.K_LEFT] and scroll > 0:
-            left=True
             scroll -= 5
-            if action == 4 or action == 5:
-                action = 5
-            elif action == 6 or action == 7:
-                action = 6
         if key[pygame.K_RIGHT] and scroll < 2000:
-            left=False
             scroll += 5
-            if action == 0 or action == 1:
-                action = 1
-            elif action == 2 or action == 3:
-                action = 2
+            
 
-    #event handlers
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        #event handlers
+        for event in pygame.event.get():
+          
+    		#quit game
+          if event.type == pygame.QUIT:
             run = False
-        if not game_paused and not game_menu and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RIGHT:
-              if action==2 or action ==3 or action==6 or action==7:
-                action=2
-                frame=0
-              else:
-                action=0
-                frame=0
+            
+    		#keyboard presses
+          if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-              if action==2 or action ==3 or action==6 or action==7:
-                action=6
-                frame=0
-              else:
-                action=4
-                frame=0
+              moving_left = True
+            if event.key == pygame.K_RIGHT:
+              moving_right = True
             if event.key == pygame.K_DOWN:
-              if not left:
-                action = 3
-                frame = 0
-              if left:
-                action = 7
-                frame = 0
+              fox.crouch = True
             if event.key == pygame.K_UP:
-              if not left:
-                action = 0
-                frame = 0
-              if left:
-                action=4
-                frame=0
+              fox.crouch = False
+            if event.key == pygame.K_SPACE and fox.alive:
+              fox.jump = True
             if event.key == pygame.K_ESCAPE:
-                game_paused = True
+              run = False
+            
+    
+    
+    		#keyboard button released
+          if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+              moving_left = False
+            if event.key == pygame.K_RIGHT:
+              moving_right = False
 
     pygame.display.update()
 
