@@ -7,7 +7,6 @@
 import pygame
 import Animals as a
 import Button as b
-from player import spritesheet as s
 
 
 pygame.init()
@@ -38,15 +37,6 @@ SCREEN_HEIGHT = 432
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Fox")
 
-#load images
-foxy_image = pygame.image.load('foxy.png')
-water_image=pygame.image.load('water.jpg')
-
-
-#create instances
-foxy = s.SpriteSheet(foxy_image)
-water = s.SpriteSheet(water_image)
-
 #load button images
 start_img = pygame.image.load('Images/Buttons/button_start.png')
 exit_img = pygame.image.load('Images/Buttons/button_exit.png')
@@ -60,7 +50,7 @@ keys_img = pygame.image.load('Images/Buttons/button_keys.png')
 back_img = pygame.image.load('Images/Buttons/button_back.png')
 
 #create button instances
-start_button = b.Button(100, 50, start_img, 0.8)
+start_button = b.Button(100, 50, start_img, 2)
 exit_button = b.Button(100, 200, exit_img, 0.8)
 pause_button = b.Button(5, 5, pause_img, 0.25)
 resume_button = b.Button(100, 50, resume_img, 1)
@@ -104,41 +94,7 @@ fox = a.Animals('Fox', 200, 200, 0.65, 7)
 #game loop
 run = True
 while run:
-    if start_game==False and game_menu:
-        #draw world
-        screen.fill((160, 255, 255))
-        screen.blit(foxy.get_image(0, 170, 270, 1.5, BLACK), (500, 70))
-        if exit_button.draw(screen):
-            run = False
-        if start_button.draw(screen):
-            game_menu = False
-            start_game=True
-    #check if game is paused
-    elif game_paused:
-        screen.fill((160, 255, 255))
-        #if resume_button.draw(screen):
-            #game_paused = False
-        #check menu state
-        if menu_state == "main":
-          #draw pause screen buttons
-          if resume_button.draw(screen):
-            game_paused = False
-          if options_button.draw(screen):
-            menu_state = "options"
-          if quit_button.draw(screen):
-            run = False
-        #check if the options menu is open
-        if menu_state == "options":
-          #draw the different options buttons
-          if video_button.draw(screen):
-            print("Video Settings")
-          if audio_button.draw(screen):
-            print("Audio Settings")
-          if keys_button.draw(screen):
-            print("Change Key Bindings")
-          if back_button.draw(screen):
-            menu_state = "main"
-    elif start_game:
+
         clock.tick(FPS)
         
         #draw world
@@ -157,6 +113,8 @@ while run:
         if fox.alive:
           if fox.in_air:
             fox.update_action(2)#2: jump
+          elif fox.attack:
+            fox.update_action(5)#5: attack
           elif fox.crouch:
             if moving_left or moving_right:
               fox.update_action(3)#3: crouch
@@ -194,6 +152,8 @@ while run:
               fox.crouch = True
             if event.key == pygame.K_UP:
               fox.crouch = False
+            if event.key == pygame.K_RCTRL:
+              fox.attack = True
             if event.key == pygame.K_SPACE and fox.alive:
               fox.jump = True
             if event.key == pygame.K_ESCAPE:
@@ -208,6 +168,6 @@ while run:
             if event.key == pygame.K_RIGHT:
               moving_right = False
 
-    pygame.display.update()
+        pygame.display.update()
 
 pygame.quit()

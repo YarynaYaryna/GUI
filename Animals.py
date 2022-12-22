@@ -13,6 +13,7 @@ class Animals(pygame.sprite.Sprite):
     self.jump = False
     self.in_air = True
     self.crouch = False
+    self.attack = False
     self.flip = False
     self.animation_list = []
     self.frame_index = 0
@@ -20,7 +21,7 @@ class Animals(pygame.sprite.Sprite):
     self.update_time = pygame.time.get_ticks()
 
     #load all images for the players
-    animation_types = ['Idle', 'Run', 'Jump', 'Crouch', 'Crouch_idle']
+    animation_types = ['Idle', 'Run', 'Jump', 'Crouch', 'Crouch_idle', 'Attack']
     for animation in animation_types:
   		#reset temporary list of images
       temp_list = []
@@ -51,6 +52,9 @@ class Animals(pygame.sprite.Sprite):
       self.flip = False
       self.direction = 1
 
+    #attack
+      if self.attack:
+        self.attack=False
 		#jump
     if self.jump == True and self.in_air == False:
       self.vel_y = -11
