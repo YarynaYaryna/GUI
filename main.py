@@ -7,7 +7,7 @@
 import pygame
 import Animals as a
 import Button as b
-
+import Items as e
 
 pygame.init()
 
@@ -21,6 +21,11 @@ scroll = 0
 
 #define colors
 BLACK=((255,0,0))
+WHITE=((240,255,240))
+
+#define font
+font = pygame.font.SysFont('Futura', 30)
+
 #define player action variables
 game_paused = False
 game_menu = True
@@ -61,6 +66,8 @@ audio_button = b.Button(425, 125, audio_img, 1)
 keys_button = b.Button(467, 225, keys_img, 1)
 back_button = b.Button(640, 325, back_img, 1)
 
+#load images
+mulberry_img = pygame.image.load("Images/Food/mulberry.png")
 
 #load background images
 ground_image = pygame.image.load("Images/Parallax/ground.png")
@@ -89,25 +96,89 @@ def draw_ground():
             ground_image,
             ((x * ground_width) - scroll * 2, SCREEN_HEIGHT - ground_height))
 
-fox = a.Animals('Fox', 200, 200, 0.65, 7)
+TILE_SIZE=40
+
+
+def draw_text(text, font, text_col, x, y):
+	img = font.render(text, True, text_col)
+	screen.blit(img, (x, y))
+
+#load images
+mulberry_img = pygame.image.load("Images/Food/mulberry.png")
+peanuts_img = pygame.image.load("Images/Food/peanuts.png")
+raspberry_img = pygame.image.load("Images/Food/raspberry.png")
+item_boxes={
+  'Mulberry'  : mulberry_img,
+  'Peanuts'  : peanuts_img,
+  'Raspberry' : raspberry_img
+}
+
+      
+#create sprite groups
+items_group = pygame.sprite.Group()
+
+#temp..................
+item=e.Item('Mulberry', 80, 380)
+items_group.add(item)
+item=e.Item('Peanuts', 400, 370)
+items_group.add(item)
+item=e.Item('Raspberry', 500, 360)
+items_group.add(item)
+
+fox = a.Animals('Fox', 200, 200, 0.65, 7, 0, 0, 0)
       
 #game loop
 run = True
 while run:
-
+            
         clock.tick(FPS)
         
         #draw world
         draw_bg()
         draw_ground()
 
+        #show mulberry
+        draw_text('Mulberry: ', font, WHITE, 10, 35)
+        for x in range(fox.mulberry):
+          screen.blit(mulberry_img, (110+(x*40), 25))
         if pause_button.draw(screen):
             game_paused = True
+        #check if game is paused
+        if game_paused:
+          start_game=True
+          screen.fill((160, 255, 255))
+        #if resume_button.draw(screen):
+            #game_paused = False
+        #check menu state
+          if menu_state == "main":
+          #draw pause screen buttons
+            if resume_button.draw(screen):
+              game_paused = False
+              start_game=False
+            if options_button.draw(screen):
+              menu_state = "options"
+            if quit_button.draw(screen):
+              run = False
+        #check if the options menu is open
+          if menu_state == "options":
+          #draw the different options buttons
+            if video_button.draw(screen):
+              print("Video Settings")
+            if audio_button.draw(screen):
+              print("Audio Settings")
+            if keys_button.draw(screen):
+              print("Change Key Bindings")
+            if back_button.draw(screen):
+              menu_state = "main"
+        
 
         fox.update_animation()
         fox.draw(screen)
         fox.move(moving_left, moving_right, SCREEN_HEIGHT)
 
+        #update and draw groups
+        items_group.update(fox)
+        items_group.draw(screen)
       
         #update player actions
         if fox.alive:

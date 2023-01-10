@@ -1,10 +1,14 @@
 import pygame, os
 
 GRAVITY=0.6
+RED=((255, 66, 79))
 
 class Animals(pygame.sprite.Sprite):
-  def __init__(self, char_type, x, y, scale, speed):
+  def __init__(self, char_type, x, y, scale, speed, mulberry, raspberry, peanuts):
     pygame.sprite.Sprite.__init__(self)
+    self.mulberry = mulberry
+    self.raspberry = raspberry
+    self.peanuts = peanuts
     self.alive = True
     self.char_type = char_type
     self.speed = speed
@@ -102,3 +106,4 @@ class Animals(pygame.sprite.Sprite):
 
   def draw(self,screen):
     screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
+    
