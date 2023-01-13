@@ -22,19 +22,19 @@ class Item(pygame.sprite.Sprite):
     self.rect=self.image.get_rect()
     self.rect.midtop = (x+TILE_SIZE//2,y+(TILE_SIZE-self.image.get_height()))
     
-  def update(self, player):
+  def update(self, player, screen_scroll):
+    #scroll
+    self.rect.x+=screen_scroll
     #check if the player has picked up the box
     if pygame.sprite.collide_rect(self, player):
       #check what kind of box it was
       if self.item_type == 'Mulberry':
-        player.mulberry+=2
-        print("Mulberry")
+        player.food+=2
       if self.item_type == 'Peanuts':
-        player.peanuts+=5
-        print("Peanuts")
+        player.food+=5
       if self.item_type == 'Raspberry':
-        player.raspberry+=3
-        print("Raspberry")
+        player.food+=3
+        
 
       #delete the item box
       self.kill()

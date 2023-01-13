@@ -5,9 +5,11 @@
 
 #import lybraries
 import pygame
+import csv
 import Animals as a
 import Button as b
 import Items as e
+import HealthAndFood as h
 
 pygame.init()
 
@@ -15,12 +17,9 @@ pygame.init()
 clock = pygame.time.Clock()
 FPS = 60
 
-#define game variables
-GRAVITY = 0.4
-scroll = 0
 
 #define colors
-BLACK=((255,0,0))
+BLACK=((0,0,0))
 WHITE=((240,255,240))
 
 #define font
@@ -42,6 +41,18 @@ SCREEN_HEIGHT = 432
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Fox")
 
+#define game variables
+GRAVITY = 0.4
+scroll = 0
+SCROLL_THRESH=200
+ROWS=8
+COLS=24
+TILE_SIZE=SCREEN_HEIGHT//ROWS
+level=1
+screen_scroll=0
+
+TILE_TYPES=13
+
 #load button images
 start_img = pygame.image.load('Images/Buttons/button_start.png')
 exit_img = pygame.image.load('Images/Buttons/button_exit.png')
@@ -57,7 +68,7 @@ back_img = pygame.image.load('Images/Buttons/button_back.png')
 #create button instances
 start_button = b.Button(100, 50, start_img, 2)
 exit_button = b.Button(100, 200, exit_img, 0.8)
-pause_button = b.Button(5, 5, pause_img, 0.25)
+pause_button = b.Button(SCREEN_WIDTH-50, 10, pause_img, 0.7)
 resume_button = b.Button(100, 50, resume_img, 1)
 options_button = b.Button(100, 150, options_img, 1)
 quit_button = b.Button(100, 250, quit_img, 1)
@@ -67,8 +78,86 @@ keys_button = b.Button(467, 225, keys_img, 1)
 back_button = b.Button(640, 325, back_img, 1)
 
 #load images
-mulberry_img = pygame.image.load("Images/Food/mulberry.png")
+#store tiles in a list
+img_list=[]
+for x in range(TILE_TYPES):
+  img=pygame.image.load(f'Level_Editor/{x}.png')
+  img=pygame.transform.scale(img,(TILE_SIZE,TILE_SIZE))
+  img_list.append(img)
 
+class World():
+  def __init__(self):
+    self.obstacle_list=[]
+
+  def process_data(self,data):
+    #iterate through each value in level data file
+    for y, row in enumerate(data):
+      for x, tile in enumerate(row):
+        if tile>=0:
+          img=img_list[tile]
+          img_rect=img.get_rect()
+          img_rect.x=x*TILE_SIZE
+          img_rect.y=y*TILE_SIZE
+          tile_data=(img,img_rect)
+          if tile>=0 and tile<=2 or tile>=8 and tile<=10:
+            self.obstacle_list.append(tile_data)
+          elif tile==11:
+            water=Water(img, x*TILE_SIZE, y*TILE_SIZE)
+            water_group.add(water)
+          elif tile >=4 and tile<=5 or tile==12:
+            decoration=Decoration(img, x*TILE_SIZE, y*TILE_SIZE)
+            decoration_group.add(decoration)
+          elif tile == 5:
+            item=e.Item('Mulberry', x*TILE_SIZE, y*TILE_SIZE)
+            items_group.add(item)
+          elif tile == 6:
+            item=e.Item('Peanuts', x*TILE_SIZE, y*TILE_SIZE)
+            items_group.add(item)
+          elif tile==7:
+            item=e.Item('Raspberry', x*TILE_SIZE, y*TILE_SIZE)
+            items_group.add(item)
+          elif tile==4:#create exit
+            exit=Exit(img, x*TILE_SIZE, y*TILE_SIZE)
+            exit_group.add(exit)
+
+  def draw(self):
+    for tile in self.obstacle_list:
+      tile[1][0]+=screen_scroll
+      screen.blit(tile[0], tile[1])
+
+  
+
+class Decoration(pygame.sprite.Sprite):
+  def __init__(self,img,x,y):
+    pygame.sprite.Sprite.__init__(self)
+    self.image=img
+    self.rect=self.image.get_rect()
+    self.rect.midtop=(x*TILE_SIZE//2,y+(TILE_SIZE-self.image.get_height()))
+
+  def update(self):
+    self.rect.x+=screen_scroll
+
+class Water(pygame.sprite.Sprite):
+  def __init__(self,img,x,y):
+    pygame.sprite.Sprite.__init__(self)
+    self.image=img
+    self.rect=self.image.get_rect()
+    self.rect.midtop=(x*TILE_SIZE//2,y+(TILE_SIZE-self.image.get_height()))
+
+  def update(self):
+    self.rect.x+=screen_scroll
+
+class Exit(pygame.sprite.Sprite):
+  def __init__(self,img,x,y):
+    pygame.sprite.Sprite.__init__(self)
+    self.image=img
+    self.rect=self.image.get_rect()
+    self.rect.midtop=(x*TILE_SIZE//2,y+(TILE_SIZE-self.image.get_height()))
+
+  def update(self):
+    self.rect.x+=screen_scroll
+      
+            
 #load background images
 ground_image = pygame.image.load("Images/Parallax/ground.png")
 ground_width = ground_image.get_width()
@@ -96,37 +185,42 @@ def draw_ground():
             ground_image,
             ((x * ground_width) - scroll * 2, SCREEN_HEIGHT - ground_height))
 
-TILE_SIZE=40
 
 
 def draw_text(text, font, text_col, x, y):
 	img = font.render(text, True, text_col)
 	screen.blit(img, (x, y))
 
-#load images
-mulberry_img = pygame.image.load("Images/Food/mulberry.png")
-peanuts_img = pygame.image.load("Images/Food/peanuts.png")
-raspberry_img = pygame.image.load("Images/Food/raspberry.png")
-item_boxes={
-  'Mulberry'  : mulberry_img,
-  'Peanuts'  : peanuts_img,
-  'Raspberry' : raspberry_img
-}
 
       
-#create sprite groups
+#creating sprite groups
 items_group = pygame.sprite.Group()
+enemy_group = pygame.sprite.Group()
+decoration_group = pygame.sprite.Group()
+water_group = pygame.sprite.Group()
+exit_group = pygame.sprite.Group()
 
-#temp..................
-item=e.Item('Mulberry', 80, 380)
-items_group.add(item)
-item=e.Item('Peanuts', 400, 370)
-items_group.add(item)
-item=e.Item('Raspberry', 500, 360)
-items_group.add(item)
 
-fox = a.Animals('Fox', 200, 200, 0.65, 7, 0, 0, 0)
-      
+fox = a.Animals('Fox', 200, 200, 0.55, 7)
+health_bar = h.Bar(10, 10, fox.health, fox.health)
+food_bar = h.Bar(10,40,fox.food, fox.max_food)
+
+#create empty tile_list
+world_data=[]
+for row in range(ROWS):
+  r=[-1]*COLS
+  world_data.append(r)
+
+#load in level data and create world
+with open (f'level{level}_data.csv', newline='') as csvfile:
+  reader=csv.reader(csvfile,delimiter=',')
+  for x, row in enumerate(reader):
+    for y, tile in enumerate(row):
+      world_data[x][y]=int(tile)
+world=World()
+world.process_data(world_data)
+
+
 #game loop
 run = True
 while run:
@@ -135,49 +229,35 @@ while run:
         
         #draw world
         draw_bg()
-        draw_ground()
-
-        #show mulberry
-        draw_text('Mulberry: ', font, WHITE, 10, 35)
-        for x in range(fox.mulberry):
-          screen.blit(mulberry_img, (110+(x*40), 25))
+        #draw world map
+        world.draw()
+        
+        #draw_ground()
+        #show player health
+        health_bar.draw(fox.health, screen)
+        food_bar.draw(fox.food,screen)
+        
+        #show bars
+        draw_text('Health',font,BLACK,25,11)
+        draw_text('Food ', font, BLACK, 25, 41)
+      
         if pause_button.draw(screen):
             game_paused = True
         #check if game is paused
-        if game_paused:
-          start_game=True
-          screen.fill((160, 255, 255))
-        #if resume_button.draw(screen):
-            #game_paused = False
-        #check menu state
-          if menu_state == "main":
-          #draw pause screen buttons
-            if resume_button.draw(screen):
-              game_paused = False
-              start_game=False
-            if options_button.draw(screen):
-              menu_state = "options"
-            if quit_button.draw(screen):
-              run = False
-        #check if the options menu is open
-          if menu_state == "options":
-          #draw the different options buttons
-            if video_button.draw(screen):
-              print("Video Settings")
-            if audio_button.draw(screen):
-              print("Audio Settings")
-            if keys_button.draw(screen):
-              print("Change Key Bindings")
-            if back_button.draw(screen):
-              menu_state = "main"
-        
-
+      
         fox.update_animation()
         fox.draw(screen)
-        fox.move(moving_left, moving_right, SCREEN_HEIGHT)
+        fox.move(moving_left, moving_right, SCREEN_HEIGHT,SCREEN_WIDTH,world,SCROLL_THRESH)
 
+          
         #update and draw groups
-        items_group.update(fox)
+        decoration_group.update()
+        water_group.update()
+        exit_group.update()
+        decoration_group.draw(screen)
+        water_group.draw(screen)
+        exit_group.draw(screen)
+        items_group.update(fox, screen_scroll)
         items_group.draw(screen)
       
         #update player actions
@@ -196,7 +276,7 @@ while run:
               fox.update_action(1)#1: run
             else:
               fox.update_action(0)#0: idle
-          fox.move(moving_left, moving_right, SCREEN_HEIGHT)
+          screen_scroll=fox.move(moving_left, moving_right, SCREEN_HEIGHT,SCREEN_WIDTH,world,SCROLL_THRESH)
 
         #get keypresses
         key = pygame.key.get_pressed()
