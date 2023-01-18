@@ -17,13 +17,29 @@ pygame.init()
 clock = pygame.time.Clock()
 FPS = 60
 
+#create game window
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 432
+LOWER_MARGIN=100
+SIDE_MARGIN=300
 
-#define colors
-BLACK=((0,0,0))
-WHITE=((240,255,240))
+screen=pygame.display.set_mode((SCREEN_WIDTH+SIDE_MARGIN, SCREEN_HEIGHT+LOWER_MARGIN))
+pygame.display.set_caption("Fox")
 
-#define font
-font = pygame.font.SysFont('Futura', 30)
+#define game variables
+GRAVITY = 0.4
+scroll = 0
+SCROLL_THRESH=100
+ROWS=8
+COLS=24
+MAX_COLS=24
+TILE_SIZE=SCREEN_HEIGHT//ROWS
+scroll_speed=1
+current_tile=0
+level=1
+screen_scroll=0
+level_editor=False
+TILE_TYPES=13
 
 #define player action variables
 game_paused = False
@@ -33,25 +49,15 @@ moving_left = False
 moving_right = False
 start_game=False
 
-#create game window
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 432
+#define colors
+BLACK=((0,0,0))
+WHITE=((240,255,240))
+GREEN=((107,255,185))
+RED=((200, 25, 25))
 
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Fox")
-
-#define game variables
-GRAVITY = 0.4
-scroll = 0
-SCROLL_THRESH=200
-ROWS=8
-COLS=24
-TILE_SIZE=SCREEN_HEIGHT//ROWS
-level=1
-screen_scroll=0
-
-TILE_TYPES=13
+#define font
+font = pygame.font.SysFont('Futura', 30)
 
 #load button images
 start_img = pygame.image.load('Images/Buttons/button_start.png')
@@ -64,26 +70,48 @@ video_img = pygame.image.load('Images/Buttons/button_video.png')
 audio_img = pygame.image.load('Images/Buttons/button_audio.png')
 keys_img = pygame.image.load('Images/Buttons/button_keys.png')
 back_img = pygame.image.load('Images/Buttons/button_back.png')
+level_editor_img = pygame.image.load('Images/Buttons/button_level-editor.png')
+save_img=pygame.image.load("Images/Buttons/save.png")
+load_img=pygame.image.load("Images/Buttons/load.png")
+back_lvl_img=pygame.image.load("Images/Buttons/back.png")
+main_menu_img=pygame.image.load("Images/Buttons/button_main-menu.png")
+
+#store tiles in a list
+img_list=[]
+for x in range(TILE_TYPES):
+  img=pygame.image.load(f'Images/Level_Editor/{x}.png')
+  img=pygame.transform.scale(img,(TILE_SIZE,TILE_SIZE))
+  img_list.append(img)
+
 
 #create button instances
-start_button = b.Button(100, 50, start_img, 2)
-exit_button = b.Button(100, 200, exit_img, 0.8)
-pause_button = b.Button(SCREEN_WIDTH-50, 10, pause_img, 0.7)
+start_button = b.Button(100, 50, start_img, 1)
+exit_button = b.Button(100, 350, exit_img, 1)
+pause_button = b.Button(SCREEN_WIDTH+SIDE_MARGIN-50, 10, pause_img, 0.7)
 resume_button = b.Button(100, 50, resume_img, 1)
 options_button = b.Button(100, 150, options_img, 1)
 quit_button = b.Button(100, 250, quit_img, 1)
 video_button = b.Button(427, 25, video_img, 1)
-audio_button = b.Button(425, 125, audio_img, 1)
-keys_button = b.Button(467, 225, keys_img, 1)
-back_button = b.Button(640, 325, back_img, 1)
+audio_button = b.Button(420, 125, audio_img, 1)
+keys_button = b.Button(450, 225, keys_img, 1)
+back_button = b.Button(560, 325, back_img, 1)
+level_editor_button = b.Button(100, 250, level_editor_img, 1.2)
+save_button=b.Button(SCREEN_WIDTH//2, SCREEN_HEIGHT+LOWER_MARGIN-90, save_img,1.5)
+load_button=b.Button(SCREEN_WIDTH//2+200, SCREEN_HEIGHT+LOWER_MARGIN-90, load_img,1.5)
+back_lvl_button=b.Button(SCREEN_WIDTH//2+400, SCREEN_HEIGHT+LOWER_MARGIN-90, back_lvl_img,1.5)
+main_menu_button=b.Button(330, 50, main_menu_img, 1.5)
 
-#load images
-#store tiles in a list
-img_list=[]
-for x in range(TILE_TYPES):
-  img=pygame.image.load(f'Level_Editor/{x}.png')
-  img=pygame.transform.scale(img,(TILE_SIZE,TILE_SIZE))
-  img_list.append(img)
+#make a button list
+button_list=[]
+button_col=0
+button_row=0
+for i in range(len(img_list)):
+  tile_button=b.Button(SCREEN_WIDTH+(75*button_col)+50,75*button_row+50,img_list[i],1)
+  button_list.append(tile_button)
+  button_col+=1
+  if button_col == 3:
+    button_row+=1
+    button_col=0
 
 class World():
   def __init__(self):
@@ -122,8 +150,9 @@ class World():
 
   def draw(self):
     for tile in self.obstacle_list:
-      tile[1][0]+=screen_scroll
-      screen.blit(tile[0], tile[1])
+        tile[1][0]+=screen_scroll
+        screen.blit(tile[0], tile[1])
+        
 
   
 
@@ -171,7 +200,8 @@ bg_width = bg_images[0].get_width()
 
 
 #drawing background      
-def draw_bg():
+def draw_bg(color):
+    screen.fill(color)
     for x in range(5):
         speed = 0.5
         for i in bg_images:
@@ -191,7 +221,14 @@ def draw_text(text, font, text_col, x, y):
 	img = font.render(text, True, text_col)
 	screen.blit(img, (x, y))
 
-
+#draw grid
+def draw_grid():
+  #vertical lines
+  for c in range(MAX_COLS+1):
+    pygame.draw.line(screen,WHITE,(c*TILE_SIZE-scroll,0),(c*TILE_SIZE-scroll, SCREEN_HEIGHT))
+  #horizontal lines
+  for c in range(ROWS+1):
+    pygame.draw.line(screen,WHITE,(0,c*TILE_SIZE),(SCREEN_WIDTH, c*TILE_SIZE))
       
 #creating sprite groups
 items_group = pygame.sprite.Group()
@@ -211,12 +248,35 @@ for row in range(ROWS):
   r=[-1]*COLS
   world_data.append(r)
 
+#create ground
+for tile in range (0,MAX_COLS):
+  world_data[ROWS-1][tile]=0
+
+
+#function for drawing the world tiles
+def draw_world():
+  for y, row in enumerate(world_data):
+    for x, tile in enumerate(row):
+      if tile>=0:
+        screen.blit(img_list[tile],(x*TILE_SIZE-scroll,y* TILE_SIZE))
+
+        
 #load in level data and create world
-with open (f'level{level}_data.csv', newline='') as csvfile:
-  reader=csv.reader(csvfile,delimiter=',')
-  for x, row in enumerate(reader):
-    for y, tile in enumerate(row):
-      world_data[x][y]=int(tile)
+def load():
+  with open (f'level{level}_data.csv', newline='') as csvfile:
+    reader=csv.reader(csvfile,delimiter=',')
+    for x, row in enumerate(reader):
+      for y, tile in enumerate(row):
+        world_data[x][y]=int(tile)
+
+#save level data
+def save():
+  with open(f'level{level}_data.csv','w', newline='') as csvfile:
+    writer=csv.writer(csvfile, delimiter=',')
+    for row in world_data:
+      writer.writerow(row)
+
+load()
 world=World()
 world.process_data(world_data)
 
@@ -224,11 +284,125 @@ world.process_data(world_data)
 #game loop
 run = True
 while run:
-            
-        clock.tick(FPS)
+  clock.tick(FPS)
+  if not start_game and not level_editor:
+      screen.fill((202, 241, 202))
+      if start_button.draw(screen):
+  	 	  start_game=True
+      if level_editor_button.draw(screen):
+        level_editor=True
+      if options_button.draw(screen):
+        game_paused=True
+        menu_state = "options"
+      if exit_button.draw(screen):
+        run=False
+  if level_editor:
+    draw_bg(GREEN)
+    draw_grid()
+    draw_world()
+
+    draw_text(f'Level: {level}', font, BLACK, 10, SCREEN_HEIGHT+LOWER_MARGIN-90)
+    draw_text('Press UP or DOWN to change level', font, BLACK, 10, SCREEN_HEIGHT+LOWER_MARGIN-60)
+
+    key = pygame.key.get_pressed()
+    if key[pygame.K_UP]:
+      level += 1
+    if key[pygame.K_DOWN] and level>1:
+      level -= 1
+
+    #save and load data
+    if save_button.draw(screen):
+      save()
+
+    if load_button.draw(screen):
+    #load in level data
+    #reset scroll back to the start of the level
+      scroll=0
+      load()
+        
+    if back_lvl_button.draw(screen):
+      level_editor=False
+      start_game=False
+
+    #draw tile panel and tiles
+    pygame.draw.rect(screen, GREEN, (SCREEN_WIDTH,0,SIDE_MARGIN,SCREEN_HEIGHT))
+
+     #choose a tile_button
+    button_count=0
+    for button_count, i in enumerate(button_list):
+      if i.draw(screen):
+        current_tile=button_count
+
+    #highlight the selected tile
+    pygame.draw.rect(screen, RED, button_list[current_tile].rect, 3)
+
+    #get keypresses
+    #key = pygame.key.get_pressed()
+   # scroll_speed=1
+   # if key[pygame.K_LEFT] and scroll > 0:
+   #   scroll -= 5*scroll_speed
+    #if key[pygame.K_RIGHT] and scroll < (MAX_COLS*TILE_SIZE)-SCREEN_WIDTH:
+    #  scroll += 5*scroll_speed
+    
+
+      #add new tiles to the screen
+    #get mouse position
+    pos=pygame.mouse.get_pos()
+    x=(pos[0]+scroll)//TILE_SIZE
+    y=pos[1]//TILE_SIZE
+  
+    #check that the coordinates are within the tile area
+    if pos[0]<SCREEN_WIDTH and pos[1]<SCREEN_HEIGHT:
+      #update tile value
+      if pygame.mouse.get_pressed()[0]==1:
+        if world_data[y][x]!= current_tile:
+          world_data[y][x] = current_tile
+      if pygame.mouse.get_pressed()[2]==1:
+          world_data[y][x] = -1
+  
+    #check if game is paused
+  if game_paused:
+        screen.fill((160, 255, 255))
+        #check menu state
+        if menu_state == "main":
+          #draw pause screen buttons
+          if resume_button.draw(screen):
+            game_paused = False
+            start_game=True
+          if options_button.draw(screen):
+            menu_state = "options"
+          if main_menu_button.draw(screen):
+            game_paused=False
+            start_game=False
+          if quit_button.draw(screen):
+            run = False
+        #check if the options menu is open
+        if menu_state == "options":
+          #draw the different options buttons
+          if video_button.draw(screen):
+            menu_state='video'
+          if audio_button.draw(screen):
+            menu_state='audio'
+          if keys_button.draw(screen):
+            menu_state='keys'
+          if back_button.draw(screen):
+            menu_state = "main"
+        if menu_state=='video':
+          draw_text("Video Settings",font,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
+          if back_button.draw(screen):
+            menu_state = "options"
+        if menu_state=='audio':
+          draw_text("Audio Settings",font,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
+          if back_button.draw(screen):
+            menu_state = "options"
+        if menu_state=='keys':
+          draw_text("Change Key Bindings",font,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
+          if back_button.draw(screen):
+            menu_state = "options"
+  elif start_game and not game_paused:
         
         #draw world
-        draw_bg()
+        draw_bg(BLACK)
         #draw world map
         world.draw()
         
@@ -282,19 +456,19 @@ while run:
         key = pygame.key.get_pressed()
         if key[pygame.K_LEFT] and scroll > 0:
             scroll -= 5
-        if key[pygame.K_RIGHT] and scroll < 2000:
+        if key[pygame.K_RIGHT] and scroll < (MAX_COLS*TILE_SIZE)-SCREEN_WIDTH:
             scroll += 5
             
 
         #event handlers
-        for event in pygame.event.get():
+  for event in pygame.event.get():
           
     		#quit game
           if event.type == pygame.QUIT:
             run = False
             
     		#keyboard presses
-          if event.type == pygame.KEYDOWN:
+          if event.type == pygame.KEYDOWN and not game_paused and start_game or event.type==pygame.KEYDOWN and level_editor:
             if event.key == pygame.K_LEFT:
               moving_left = True
             if event.key == pygame.K_RIGHT:
@@ -308,7 +482,7 @@ while run:
             if event.key == pygame.K_SPACE and fox.alive:
               fox.jump = True
             if event.key == pygame.K_ESCAPE:
-              run = False
+              game_paused=True
             
     
     
@@ -319,6 +493,6 @@ while run:
             if event.key == pygame.K_RIGHT:
               moving_right = False
 
-        pygame.display.update()
+  pygame.display.update()
 
 pygame.quit()
