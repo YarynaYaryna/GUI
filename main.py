@@ -58,6 +58,7 @@ RED=((200, 25, 25))
 
 #define font
 font = pygame.font.SysFont('Futura', 30)
+font1 = pygame.font.SysFont('Futura',70)
 
 #load button images
 start_img = pygame.image.load('Images/Buttons/button_start.png')
@@ -95,11 +96,11 @@ video_button = b.Button(427, 25, video_img, 1)
 audio_button = b.Button(420, 125, audio_img, 1)
 keys_button = b.Button(450, 225, keys_img, 1)
 back_button = b.Button(560, 325, back_img, 1)
-level_editor_button = b.Button(100, 250, level_editor_img, 1.2)
+level_editor_button = b.Button(100, 250, level_editor_img, 1)
 save_button=b.Button(SCREEN_WIDTH//2, SCREEN_HEIGHT+LOWER_MARGIN-90, save_img,1.5)
 load_button=b.Button(SCREEN_WIDTH//2+200, SCREEN_HEIGHT+LOWER_MARGIN-90, load_img,1.5)
 back_lvl_button=b.Button(SCREEN_WIDTH//2+400, SCREEN_HEIGHT+LOWER_MARGIN-90, back_lvl_img,1.5)
-main_menu_button=b.Button(330, 50, main_menu_img, 1.5)
+main_menu_button=b.Button(330, 50, main_menu_img, 1)
 
 #make a button list
 button_list=[]
@@ -388,15 +389,15 @@ while run:
           if back_button.draw(screen):
             menu_state = "main"
         if menu_state=='video':
-          draw_text("Video Settings",font,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
+          draw_text("Video Settings",font1,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
           if back_button.draw(screen):
             menu_state = "options"
         if menu_state=='audio':
-          draw_text("Audio Settings",font,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
+          draw_text("Audio Settings",font1,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
           if back_button.draw(screen):
             menu_state = "options"
         if menu_state=='keys':
-          draw_text("Change Key Bindings",font,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
+          draw_text("Change Key Bindings",font1,BLACK,SCREEN_WIDTH//2-100, SCREEN_HEIGHT//2-50)
           if back_button.draw(screen):
             menu_state = "options"
   elif start_game and not game_paused:
