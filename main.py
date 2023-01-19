@@ -5,13 +5,20 @@
 
 #import lybraries
 import pygame
+from pygame import mixer
 import csv
 import Animals as a
 import Button as b
 import Items as e
 import HealthAndFood as h
 
+mixer.init()
 pygame.init()
+
+#load music
+pygame.mixer.music.load('music.mp3')
+pygame.mixer.music.set_volume(0.7)
+pygame.mixer.music.play(-1,0.0,5000)
 
 #set framerate
 clock = pygame.time.Clock()
@@ -30,9 +37,9 @@ pygame.display.set_caption("Fox")
 GRAVITY = 0.4
 scroll = 0
 SCROLL_THRESH=100
-ROWS=8
-COLS=24
-MAX_COLS=24
+ROWS=10
+COLS=100
+MAX_COLS=100
 TILE_SIZE=SCREEN_HEIGHT//ROWS
 scroll_speed=1
 current_tile=0
@@ -60,6 +67,10 @@ RED=((200, 25, 25))
 font = pygame.font.SysFont('Futura', 30)
 font1 = pygame.font.SysFont('Futura',70)
 
+
+
+#load images
+foxx_img=pygame.image.load('foxx.png')
 #load button images
 start_img = pygame.image.load('Images/Buttons/button_start.png')
 exit_img = pygame.image.load('Images/Buttons/button_exit.png')
@@ -92,10 +103,10 @@ pause_button = b.Button(SCREEN_WIDTH+SIDE_MARGIN-50, 10, pause_img, 0.7)
 resume_button = b.Button(100, 50, resume_img, 1)
 options_button = b.Button(100, 150, options_img, 1)
 quit_button = b.Button(100, 250, quit_img, 1)
-video_button = b.Button(427, 25, video_img, 1)
-audio_button = b.Button(420, 125, audio_img, 1)
-keys_button = b.Button(450, 225, keys_img, 1)
-back_button = b.Button(560, 325, back_img, 1)
+video_button = b.Button(727, 25, video_img, 1)
+audio_button = b.Button(720, 125, audio_img, 1)
+keys_button = b.Button(750, 225, keys_img, 1)
+back_button = b.Button(860, 325, back_img, 1)
 level_editor_button = b.Button(100, 250, level_editor_img, 1)
 save_button=b.Button(SCREEN_WIDTH//2, SCREEN_HEIGHT+LOWER_MARGIN-90, save_img,1.5)
 load_button=b.Button(SCREEN_WIDTH//2+200, SCREEN_HEIGHT+LOWER_MARGIN-90, load_img,1.5)
@@ -130,10 +141,10 @@ class World():
           tile_data=(img,img_rect)
           if tile>=0 and tile<=2 or tile>=8 and tile<=10:
             self.obstacle_list.append(tile_data)
-          elif tile==11:
+          elif tile>=11 and tile<=12:
             water=Water(img, x*TILE_SIZE, y*TILE_SIZE)
             water_group.add(water)
-          elif tile >=4 and tile<=5 or tile==12:
+          elif tile >=4 and tile<=5:
             decoration=Decoration(img, x*TILE_SIZE, y*TILE_SIZE)
             decoration_group.add(decoration)
           elif tile == 5:
@@ -203,10 +214,10 @@ bg_width = bg_images[0].get_width()
 #drawing background      
 def draw_bg(color):
     screen.fill(color)
-    for x in range(5):
+    for x in range(10):
         speed = 0.5
         for i in bg_images:
-            screen.blit(i, ((x * bg_width) - scroll * speed, 0))
+            screen.blit(i, ((x * bg_width) - screen_scroll * speed, 0))
             speed += 0.2
 
 #drawing ground
@@ -288,6 +299,7 @@ while run:
   clock.tick(FPS)
   if not start_game and not level_editor:
       screen.fill((202, 241, 202))
+      screen.blit(foxx_img,(SCREEN_WIDTH-100,SCREEN_HEIGHT-300))
       if start_button.draw(screen):
   	 	  start_game=True
       if level_editor_button.draw(screen):
@@ -306,7 +318,7 @@ while run:
     draw_text('Press UP or DOWN to change level', font, BLACK, 10, SCREEN_HEIGHT+LOWER_MARGIN-60)
 
     key = pygame.key.get_pressed()
-    if key[pygame.K_UP]:
+    if key[pygame.K_UP] and level<5:
       level += 1
     if key[pygame.K_DOWN] and level>1:
       level -= 1
@@ -319,7 +331,10 @@ while run:
     #load in level data
     #reset scroll back to the start of the level
       scroll=0
-      load()
+      try:
+        load()
+      except:
+        pass
         
     if back_lvl_button.draw(screen):
       level_editor=False
@@ -338,13 +353,11 @@ while run:
     pygame.draw.rect(screen, RED, button_list[current_tile].rect, 3)
 
     #get keypresses
-    #key = pygame.key.get_pressed()
-   # scroll_speed=1
-   # if key[pygame.K_LEFT] and scroll > 0:
-   #   scroll -= 5*scroll_speed
-    #if key[pygame.K_RIGHT] and scroll < (MAX_COLS*TILE_SIZE)-SCREEN_WIDTH:
-    #  scroll += 5*scroll_speed
-    
+    key = pygame.key.get_pressed()
+    if key[pygame.K_LEFT] and scroll > 0:
+      scroll -= 5*scroll_speed
+    if key[pygame.K_RIGHT] and scroll < (MAX_COLS*TILE_SIZE)-SCREEN_WIDTH:
+     scroll += 5*scroll_speed
 
       #add new tiles to the screen
     #get mouse position
@@ -366,10 +379,11 @@ while run:
         screen.fill((160, 255, 255))
         #check menu state
         if menu_state == "main":
+          screen.blit(foxx_img,(SCREEN_WIDTH-100,SCREEN_HEIGHT-300))
           #draw pause screen buttons
           if resume_button.draw(screen):
-            game_paused = False
-            start_game=True
+              game_paused = False
+              start_game=True
           if options_button.draw(screen):
             menu_state = "options"
           if main_menu_button.draw(screen):
@@ -379,6 +393,7 @@ while run:
             run = False
         #check if the options menu is open
         if menu_state == "options":
+          screen.blit(foxx_img,(SCREEN_WIDTH-700,SCREEN_HEIGHT-300))
           #draw the different options buttons
           if video_button.draw(screen):
             menu_state='video'
